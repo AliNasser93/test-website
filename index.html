@@ -3,21 +3,348 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hello World</title>
+  <title>Shader Gallery</title>
   <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
-      margin: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      font-family: sans-serif;
-      font-size: 3rem;
-      font-weight: bold;
+      background: #0a0a0f;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      padding: 48px 32px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      font-weight: 300;
+      letter-spacing: 0.2em;
+      margin-bottom: 12px;
+      color: #fff;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #555;
+      font-size: 0.85rem;
+      letter-spacing: 0.1em;
+      margin-bottom: 48px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: #111118;
+      border: 1px solid #1e1e2e;
+      border-radius: 16px;
+      overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: #333;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 220px;
+    }
+
+    .card-info {
+      padding: 16px 20px 20px;
+    }
+
+    .card-info h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+      color: #e0e0e0;
+    }
+
+    .card-info p {
+      font-size: 0.78rem;
+      color: #555;
+      line-height: 1.5;
     }
   </style>
 </head>
 <body>
-  Hello World
+
+  <h1>SHADER GALLERY</h1>
+  <p class="subtitle">WebGL shaders running live in your browser</p>
+
+  <div class="grid">
+
+    <div class="card">
+      <canvas id="c1"></canvas>
+      <div class="card-info">
+        <h2>Plasma</h2>
+        <p>Classic GLSL plasma using layered sine waves across UV space.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <canvas id="c2"></canvas>
+      <div class="card-info">
+        <h2>Vortex</h2>
+        <p>Polar coordinate rotation with radial sine modulation.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <canvas id="c3"></canvas>
+      <div class="card-info">
+        <h2>Ocean Waves</h2>
+        <p>Layered sine waves simulating a top-down water surface.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <canvas id="c4"></canvas>
+      <div class="card-info">
+        <h2>Nebula</h2>
+        <p>Multi-frequency noise blended into deep space colour fields.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <canvas id="c5"></canvas>
+      <div class="card-info">
+        <h2>Fire</h2>
+        <p>Upward-drifting turbulence with an ember colour ramp.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <canvas id="c6"></canvas>
+      <div class="card-info">
+        <h2>Neon Grid</h2>
+        <p>Perspective grid with a pulsing glow — retro synthwave aesthetic.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const VERT = `
+      attribute vec2 pos;
+      void main() { gl_Position = vec4(pos, 0.0, 1.0); }
+    `;
+
+    const FRAGS = {
+      c1: `
+        precision mediump float;
+        uniform float t;
+        uniform vec2 res;
+        void main() {
+          vec2 uv = gl_FragCoord.xy / res;
+          float v  = sin(uv.x * 10.0 + t);
+          v += sin(uv.y * 10.0 + t * 0.9);
+          v += sin((uv.x + uv.y) * 8.0 + t * 1.2);
+          v += sin(length(uv - 0.5) * 14.0 - t * 1.5);
+          float r = sin(v * 3.14159);
+          float g = sin(v * 3.14159 + 2.094);
+          float b = sin(v * 3.14159 + 4.189);
+          gl_FragColor = vec4(r * 0.5 + 0.5, g * 0.5 + 0.5, b * 0.5 + 0.5, 1.0);
+        }
+      `,
+      c2: `
+        precision mediump float;
+        uniform float t;
+        uniform vec2 res;
+        void main() {
+          vec2 uv = (gl_FragCoord.xy - res * 0.5) / res.y;
+          float angle  = atan(uv.y, uv.x);
+          float radius = length(uv);
+          float v = sin(angle * 8.0 - radius * 12.0 + t * 2.5);
+          float pulse = sin(radius * 20.0 - t * 3.0) * 0.3;
+          v = v * 0.5 + pulse;
+          gl_FragColor = vec4(
+            v * 0.4 + 0.3,
+            radius * 0.6,
+            1.0 - v * 0.5,
+            1.0
+          );
+        }
+      `,
+      c3: `
+        precision mediump float;
+        uniform float t;
+        uniform vec2 res;
+        void main() {
+          vec2 uv = gl_FragCoord.xy / res;
+          float w1 = sin(uv.x * 12.0 + t * 1.2 + sin(uv.x * 3.0 + t) * 2.0) * 0.5 + 0.5;
+          float w2 = sin(uv.x * 7.0  - t * 0.8 + sin(uv.y * 4.0 + t * 0.5) * 1.5) * 0.5 + 0.5;
+          float w3 = sin((uv.x + uv.y) * 9.0 + t) * 0.5 + 0.5;
+          float wave = (w1 + w2 + w3) / 3.0;
+          float depth = uv.y * 0.6 + 0.2;
+          gl_FragColor = vec4(
+            wave * 0.05,
+            wave * 0.3 * depth,
+            wave * 0.7 + depth * 0.3,
+            1.0
+          );
+        }
+      `,
+      c4: `
+        precision mediump float;
+        uniform float t;
+        uniform vec2 res;
+        float hash(vec2 p) {
+          return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+        }
+        float noise(vec2 p) {
+          vec2 i = floor(p);
+          vec2 f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          float a = hash(i);
+          float b = hash(i + vec2(1,0));
+          float c = hash(i + vec2(0,1));
+          float d = hash(i + vec2(1,1));
+          return mix(mix(a,b,f.x), mix(c,d,f.x), f.y);
+        }
+        void main() {
+          vec2 uv = gl_FragCoord.xy / res;
+          vec2 p = uv * 4.0;
+          float n  = noise(p + t * 0.3);
+          n += noise(p * 2.0 - t * 0.2) * 0.5;
+          n += noise(p * 4.0 + t * 0.15) * 0.25;
+          n /= 1.75;
+          gl_FragColor = vec4(
+            n * 0.2,
+            n * 0.05,
+            n * 0.9 + 0.1,
+            1.0
+          );
+        }
+      `,
+      c5: `
+        precision mediump float;
+        uniform float t;
+        uniform vec2 res;
+        float hash(vec2 p) {
+          return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+        }
+        float noise(vec2 p) {
+          vec2 i = floor(p);
+          vec2 f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          return mix(
+            mix(hash(i), hash(i + vec2(1,0)), f.x),
+            mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), f.x),
+            f.y
+          );
+        }
+        void main() {
+          vec2 uv = gl_FragCoord.xy / res;
+          float y = uv.y;
+          vec2 p = vec2(uv.x, uv.y - t * 0.4);
+          float n  = noise(p * 5.0);
+          n += noise(p * 10.0 + t * 0.3) * 0.5;
+          n += noise(p * 20.0 - t * 0.2) * 0.25;
+          n /= 1.75;
+          float fire = n - y * 0.9 + 0.3;
+          fire = clamp(fire, 0.0, 1.0);
+          gl_FragColor = vec4(
+            fire * 1.8,
+            fire * fire * 0.6,
+            fire * fire * fire * 0.1,
+            1.0
+          );
+        }
+      `,
+      c6: `
+        precision mediump float;
+        uniform float t;
+        uniform vec2 res;
+        void main() {
+          vec2 uv = gl_FragCoord.xy / res;
+          /* perspective warp */
+          float horizon = 0.45;
+          float perspective = (uv.y - horizon) / (1.0 - horizon);
+          perspective = max(perspective, 0.001);
+          vec2 grid = vec2(
+            fract((uv.x - 0.5) / perspective * 4.0),
+            fract(1.0 / perspective * 1.5 - t * 1.5)
+          );
+          float lx = smoothstep(0.04, 0.0, abs(grid.x - 0.5) - 0.48);
+          float ly = smoothstep(0.04, 0.0, abs(grid.y - 0.5) - 0.48);
+          float lines = max(lx, ly);
+          float glow  = sin(t * 1.2) * 0.5 + 0.5;
+          vec3 col = vec3(0.0, 0.8 + glow * 0.2, 1.0) * lines;
+          /* horizon fade */
+          float fade = smoothstep(horizon, horizon + 0.15, uv.y);
+          col *= fade;
+          /* sky gradient */
+          float sky = smoothstep(horizon, 0.0, uv.y);
+          col += vec3(0.4, 0.0, 0.8) * sky * 0.3;
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `
+    };
+
+    function initShader(id, fragSrc) {
+      const canvas = document.getElementById(id);
+      const gl = canvas.getContext('webgl');
+      if (!gl) return;
+
+      function resize() {
+        canvas.width  = canvas.clientWidth  * devicePixelRatio;
+        canvas.height = canvas.clientHeight * devicePixelRatio;
+        gl.viewport(0, 0, canvas.width, canvas.height);
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      function compile(type, src) {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        return s;
+      }
+
+      const prog = gl.createProgram();
+      gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT));
+      gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fragSrc));
+      gl.linkProgram(prog);
+      gl.useProgram(prog);
+
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+        -1,-1,  1,-1,  -1,1,  1,1
+      ]), gl.STATIC_DRAW);
+
+      const posLoc = gl.getAttribLocation(prog, 'pos');
+      gl.enableVertexAttribArray(posLoc);
+      gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+      const tLoc   = gl.getUniformLocation(prog, 't');
+      const resLoc = gl.getUniformLocation(prog, 'res');
+
+      const start = performance.now();
+      function draw() {
+        const elapsed = (performance.now() - start) / 1000;
+        gl.uniform1f(tLoc, elapsed);
+        gl.uniform2f(resLoc, canvas.width, canvas.height);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    Object.entries(FRAGS).forEach(([id, frag]) => initShader(id, frag));
+  </script>
+
 </body>
 </html>
